@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ledger</title>
+</head>
+<body>
+  <h2>Ledger</h2>
+
+  <div id="createView">
+    <input id="groupName" placeholder="Group name">
+    <button onclick="createGroup()">Create Group</button>
+  </div>
+
+  <div id="groupView" style="display:none">
+    <h3 id="gName"></h3>
+
+    <h4>Members</h4>
+    <input id="memberName" placeholder="Member name">
+    <button onclick="addMember()">Add Member</button>
+    <ul id="memberList"></ul>
+
+    <h4>Acting as</h4>
+    <select id="actingAs" onchange="setActingAs()"></select>
+
+    <h4>Add Expense</h4>
+    <input id="desc" placeholder="Description">
+    <input id="amount" placeholder="Amount" type="number" step="0.01">
+    <select id="paidBy"></select>
+    <select id="splitType" onchange="renderSplitInputs()">
+      <option value="equal">Equal split</option>
+      <option value="exact">Exact amounts</option>
+      <option value="percent">Percentages</option>
+    </select>
+    <div id="splitInputs"></div>
+    <button onclick="addExpense()">Add Expense</button>
+
+    <h4>Balances</h4>
+    <table id="balTable"></table>
+
+    <h4>Settle Up</h4>
+    <ul id="settleList"></ul>
+
+    <h4>Activity Feed</h4>
+    <ul id="feed"></ul>
+
+    <h4>Export History</h4>
+    <select id="historyMember"></select>
+    <button onclick="downloadHistory()">Download CSV</button>
+
+    <br><br>
+    <button onclick="refresh()">Refresh</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
