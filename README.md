@@ -1,11 +1,15 @@
 # Ledger MVP
 
 ## Setup
-npm install
-node server.js
-# open http://localhost:3000
 
-## What's built
-Groups, members, expenses with equal/exact/percent splits, exact balance
-calculation in integer cents, greedy settle-up, token-based member auth,
-activity feed, CSV export of member history.
+1. Install dependencies
+
+npm install
+
+2. Start the server
+
+npm start
+
+3. Open in browser
+
+http://localhost:3000
