@@ -1,56 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Ledger</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ledger - Group Expense Tracker</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <h2>Ledger</h2>
 
-  <div id="createView">
-    <input id="groupName" placeholder="Group name">
-    <button onclick="createGroup()">Create Group</button>
+  <!-- SCREEN 1: ONBOARDING -->
+  <div id="screen-onboarding" class="screen">
+    <div class="onboarding-container">
+      <div class="wordmark-wrap">
+        <span class="rule"></span>
+        <span class="wordmark">LEDGER</span>
+        <span class="rule"></span>
+      </div>
+      <div class="card onboarding-card">
+        <h1 class="serif-heading">Start a new ledger</h1>
+        <p class="text-mute">Create a group to track shared expenses and settle up.</p>
+        <form id="form-create-group" style="margin-top: 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="input-group-name">Group name</label>
+            <input type="text" id="input-group-name" placeholder="e.g. Trip to Tahoe" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="input-creator-name">Your name</label>
+            <input type="text" id="input-creator-name" placeholder="e.g. Alice" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="input-creator-budget">Initial budget</label>
+            <input type="number" id="input-creator-budget" class="mono" placeholder="0.00" step="0.01" min="0" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Create group</button>
+        </form>
+      </div>
+    </div>
   </div>
 
-  <div id="groupView" style="display:none">
-    <h3 id="gName"></h3>
+  <!-- SCREEN 2: MAIN DASHBOARD -->
+  <div id="screen-dashboard" class="screen hidden">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div class="logomark">L</div>
+        <h1 id="group-title" class="serif-heading">Group Name</h1>
+      </div>
+      <div class="top-bar-right">
+        <span class="text-mute">Acting as</span>
+        <select id="acting-as-select" class="dropdown select-acting-as">
+          <!-- Member options inserted here -->
+        </select>
+      </div>
+    </header>
 
-    <h4>Members</h4>
-    <input id="memberName" placeholder="Member name">
-    <button onclick="addMember()">Add Member</button>
-    <ul id="memberList"></ul>
+    <div class="dashboard-layout">
+      <!-- Left Column -->
+      <aside class="col-left">
+        
+        <section class="card section-balances">
+          <h2>Balances</h2>
+          <div id="balances-list" class="balances-list">
+            <!-- Balance bars inserted here -->
+          </div>
+        </section>
 
-    <h4>Acting as</h4>
-    <select id="actingAs" onchange="setActingAs()"></select>
+        <section class="card section-settle">
+          <h2>Settle up</h2>
+          <div id="settlements-list" class="settlements-list">
+            <!-- Settlements inserted here -->
+          </div>
+        </section>
 
-    <h4>Add Expense</h4>
-    <input id="desc" placeholder="Description">
-    <input id="amount" placeholder="Amount" type="number" step="0.01">
-    <select id="paidBy"></select>
-    <select id="splitType" onchange="renderSplitInputs()">
-      <option value="equal">Equal split</option>
-      <option value="exact">Exact amounts</option>
-      <option value="percent">Percentages</option>
-    </select>
-    <div id="splitInputs"></div>
-    <button onclick="addExpense()">Add Expense</button>
+        <section class="card section-members">
+          <div class="header-with-btn">
+            <h2>Members</h2>
+            <button id="btn-add-member-text" class="btn-text">+ Add member</button>
+          </div>
+          <div id="members-list" class="members-list">
+            <!-- Member names inserted here -->
+          </div>
+          <form id="form-add-member" class="hidden" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <input type="text" id="input-member-name" placeholder="Name" required>
+            <input type="number" id="input-member-budget" class="mono" placeholder="Initial budget" step="0.01" min="0" required>
+            <button type="submit" class="btn btn-primary btn-full">Add</button>
+            <button type="button" id="btn-cancel-add-member" class="btn btn-secondary btn-full">Cancel</button>
+          </form>
+        </section>
 
-    <h4>Balances</h4>
-    <table id="balTable"></table>
+        <section class="card section-export">
+          <h2>Export</h2>
+          <div class="export-row">
+            <select id="export-member-select" class="dropdown">
+              <!-- Member options inserted here -->
+            </select>
+            <button id="btn-download-csv" class="btn btn-secondary">Download CSV</button>
+          </div>
+        </section>
+        
+      </aside>
 
-    <h4>Settle Up</h4>
-    <ul id="settleList"></ul>
-
-    <h4>Activity Feed</h4>
-    <ul id="feed"></ul>
-
-    <h4>Export History</h4>
-    <select id="historyMember"></select>
-    <button onclick="downloadHistory()">Download CSV</button>
-
-    <br><br>
-    <button onclick="refresh()">Refresh</button>
+      <!-- Right Column -->
+      <main class="col-right">
+        <div class="header-with-btn activity-header">
+          <h2>Activity</h2>
+          <button id="btn-add-expense" class="btn btn-primary">+ Add expense</button>
+        </div>
+        
+        <div id="activity-feed" class="activity-feed">
+          <!-- Expense cards inserted here -->
+        </div>
+      </main>
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- SCREEN 3: ADD EXPENSE MODAL -->
+  <div id="modal-add-expense" class="modal-backdrop hidden">
+    <div class="modal card">
+      <div class="modal-header">
+        <h2 class="serif-heading">New expense</h2>
+        <button id="btn-close-modal" class="btn-icon">&times;</button>
+      </div>
+      
+      <form id="form-add-expense">
+        <div class="form-group">
+          <label for="expense-desc">Description</label>
+          <input type="text" id="expense-desc" placeholder="Dinner at the harbor" required>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group half">
+            <label for="expense-amount">Amount</label>
+            <input type="number" id="expense-amount" class="mono" placeholder="0.00" step="0.01" min="0.01" required>
+          </div>
+          <div class="form-group half">
+            <label for="expense-paid-by">Paid by</label>
+            <select id="expense-paid-by" class="dropdown" required>
+              <!-- Member options inserted here -->
+            </select>
+          </div>
+        </div>
+
+        <div class="segmented-control">
+          <input type="radio" name="split_type" id="split-equal" value="equal" checked>
+          <label for="split-equal">Equal</label>
+
+          <input type="radio" name="split_type" id="split-exact" value="exact">
+          <label for="split-exact">Exact</label>
+
+          <input type="radio" name="split_type" id="split-percent" value="percent">
+          <label for="split-percent">Percent</label>
+          
+          <div class="segment-indicator"></div>
+        </div>
+
+        <div id="split-details" class="split-details hidden">
+          <!-- Dynamic rows for Exact/Percent inserted here -->
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full modal-submit">Add expense</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
 </body>
 </html>

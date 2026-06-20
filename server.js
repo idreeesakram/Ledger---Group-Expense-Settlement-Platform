@@ -18,37 +18,37 @@ function splitEqually(totalCents, memberIds) {
 
 // ---------- balance logic ----------
 function getBalances(groupId) {
-  const members = db.prepare('SELECT id, name FROM members WHERE group_id = ?').all(groupId);
+  const members = db.prepare('SELECT id, name, initial_budget_cents FROM members WHERE group_id = ?').all(groupId);
   const balances = {};
-  members.forEach(m => balances[m.id] = { id: m.id, name: m.name, balance_cents: 0 });
+  members.forEach(m => balances[m.id] = { id: m.id, name: m.name, balance_cents: m.initial_budget_cents || 0, net_balance_cents: 0 });
 
   db.prepare(`SELECT paid_by AS member_id, SUM(amount_cents) AS total
               FROM expenses WHERE group_id = ? GROUP BY paid_by`)
     .all(groupId)
-    .forEach(p => { if (balances[p.member_id]) balances[p.member_id].balance_cents += p.total; });
+    .forEach(p => { if (balances[p.member_id]) { balances[p.member_id].balance_cents += p.total; balances[p.member_id].net_balance_cents += p.total; } });
 
   db.prepare(`SELECT es.member_id, SUM(es.owed_cents) AS total
               FROM expense_splits es JOIN expenses e ON es.expense_id = e.id
               WHERE e.group_id = ? GROUP BY es.member_id`)
     .all(groupId)
-    .forEach(o => { if (balances[o.member_id]) balances[o.member_id].balance_cents -= o.total; });
+    .forEach(o => { if (balances[o.member_id]) { balances[o.member_id].balance_cents -= o.total; balances[o.member_id].net_balance_cents -= o.total; } });
 
   return Object.values(balances);
 }
 
 // ---------- settle-up ----------
 function computeSettlement(balances) {
-  const creditors = balances.filter(b => b.balance_cents > 0).map(b => ({ ...b })).sort((a, b) => b.balance_cents - a.balance_cents);
-  const debtors = balances.filter(b => b.balance_cents < 0).map(b => ({ ...b, balance_cents: -b.balance_cents })).sort((a, b) => b.balance_cents - a.balance_cents);
+  const creditors = balances.filter(b => b.net_balance_cents > 0).map(b => ({ ...b })).sort((a, b) => b.net_balance_cents - a.net_balance_cents);
+  const debtors = balances.filter(b => b.net_balance_cents < 0).map(b => ({ ...b, net_balance_cents: -b.net_balance_cents })).sort((a, b) => b.net_balance_cents - a.net_balance_cents);
   const tx = [];
   let i = 0, j = 0;
   while (i < debtors.length && j < creditors.length) {
     const d = debtors[i], c = creditors[j];
-    const amt = Math.min(d.balance_cents, c.balance_cents);
+    const amt = Math.min(d.net_balance_cents, c.net_balance_cents);
     if (amt > 0) tx.push({ from: d.name, to: c.name, amount_cents: amt });
-    d.balance_cents -= amt; c.balance_cents -= amt;
-    if (d.balance_cents === 0) i++;
-    if (c.balance_cents === 0) j++;
+    d.net_balance_cents -= amt; c.net_balance_cents -= amt;
+    if (d.net_balance_cents === 0) i++;
+    if (c.net_balance_cents === 0) j++;
   }
   return tx;
 }
@@ -78,8 +78,10 @@ app.get('/groups/:id', requireMember, (req, res) => {
 
 app.post('/groups/:id/members', (req, res) => {
   const token = crypto.randomBytes(16).toString('hex');
-  const r = db.prepare('INSERT INTO members (group_id, name, token) VALUES (?,?,?)').run(req.params.id, req.body.name, token);
-  res.json({ id: r.lastInsertRowid, name: req.body.name, token });
+  const initialBudget = req.body.initial_budget || 0;
+  const initialBudgetCents = Math.round(initialBudget * 100);
+  const r = db.prepare('INSERT INTO members (group_id, name, token, initial_budget_cents) VALUES (?,?,?,?)').run(req.params.id, req.body.name, token, initialBudgetCents);
+  res.json({ id: r.lastInsertRowid, name: req.body.name, token, initial_budget_cents: initialBudgetCents });
 });
 
 app.post('/groups/:id/expenses', requireMember, (req, res) => {
